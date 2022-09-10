@@ -1,0 +1,9 @@
+body {
+    background-color: #242426;
+    color: #EDEDFC;
+}
+.container {
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+}
