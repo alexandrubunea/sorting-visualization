@@ -8,9 +8,6 @@ import Container from "./components/Container";
 import './App.css';
 
 const App = () => {
-	const [random_values, set_random_values] = useState<number[]>([]);
-	const [initial_render, set_initial_render] = useState<boolean>(false);
-
 	/*
 		Explanation:
 			We do some quick math to calculate a responsive size for our application,
@@ -25,20 +22,25 @@ const App = () => {
 		top_gap = the size of the top margin
 	*/
 	const tool_bar_height = Math.floor(window.innerHeight * 5/100);
-	const magic_gap = 25;
-	const bar_max_value = window.innerHeight - tool_bar_height - magic_gap - 100;
+	const bar_max_value = window.innerHeight - tool_bar_height - 100;
 	const bar_width = 5;
 	const gap_between_bars = 2;
-	const number_of_bars = Math.floor((window.innerWidth - Math.floor((window.innerWidth / 10))) / (gap_between_bars + bar_width));
-	const top_gap = window.innerHeight - bar_max_value - magic_gap - tool_bar_height;
+	const number_of_bars = Math.floor((window.innerWidth - Math.floor((window.innerWidth / 10)) - 25) / (gap_between_bars + bar_width));
+	const top_gap = window.innerHeight - bar_max_value - tool_bar_height;
 
-	console.log(top_gap);
+	// States
+	const [random_values, set_random_values] = useState<number[]>([]);
+	const [initial_render, set_initial_render] = useState<boolean>(false);
+
+	const ToolbarStyle = {
+		height: tool_bar_height + "px",
+	}
 
 	const reset_random_values = useCallback(() => {
-		set_random_values([]);
+		set_random_values([bar_max_value]);
 
 		for(let i = 0; i < number_of_bars; ++i) {
-			let random_value = Math.floor(Math.random() * (bar_max_value - 10 + 1) + 10);
+			let random_value = Math.floor(Math.random() * (bar_max_value - 25 + 1) + 25);
 
 			set_random_values(prev_random_values => {
 				return [...prev_random_values, random_value];
@@ -51,7 +53,6 @@ const App = () => {
 			if(!initial_render) {
 				set_initial_render(true);
 				reset_random_values();
-				console.log(random_values);
 			}
 		}
 	}, [initial_render, set_initial_render, reset_random_values, random_values]);
@@ -59,7 +60,10 @@ const App = () => {
 	
 	return (
 		<div className='App'>
-			<Container array={random_values} top_margin={top_gap} />
+			<Container array={random_values} top_margin={top_gap} container_height={bar_max_value} />
+			<div className="toolbar" style={ToolbarStyle}>
+				<button onClick={() => {reset_random_values()}}>Reset</button>
+			</div>
 		</div>
   	)
 };

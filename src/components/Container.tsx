@@ -8,11 +8,13 @@ import './Container.css';
 type ContainerProps = {
     array: number[],
     top_margin: number,
+    container_height: number,
 };
 
-const Container = ({array, top_margin}: ContainerProps) => {
+const Container = ({array, top_margin, container_height}: ContainerProps) => {
     const ContainerStyle = {
         marginTop: top_margin + "px",
+        height: container_height + "px",
     }
 
     return (

@@ -1,6 +1,6 @@
 .Bar {
     background-color: #1ABCDD;
     width: 5px;
-    display: inline-block;
+    display: inline-flex;
     margin-left: 2px;
 }

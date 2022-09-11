@@ -6,3 +6,19 @@ body {
     height: 100%;
     width: 100%;
 }
+.toolbar {
+    background-color: #008F8C;
+    width: 100%;
+}
+.toolbar button {
+    margin: 5px;
+    padding: 5px;
+    background-color: #015958;
+    color: #EDEDFC;
+    border: 1px solid #023535;
+    border-radius: 5px;
+}
+.toolbar button:hover {
+    background-color: #023535;
+    cursor: pointer;
+}
