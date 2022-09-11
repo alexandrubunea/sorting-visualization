@@ -1,21 +1,20 @@
+// Style
 import './Bar.css';
-import { PropsWithChildren } from 'react';
 
-interface BarProps {
-    value: number
-}
+type BarProps = {
+    value: number,
+};
 
-const Bar = (props: PropsWithChildren<BarProps>) => {
+const Bar = ({value}: BarProps) => {
 
     const BarStyle = {
-        height: `${props.value}px`
+        height: value + "px",
     }
 
-    return(
-        <div className="Bar" style={BarStyle}>
-
+    return (
+        <div className='Bar' style={BarStyle}>
         </div>
-    );
-}
+    )
+};
 
 export default Bar;
