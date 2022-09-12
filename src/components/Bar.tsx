@@ -3,12 +3,16 @@ import './Bar.css';
 
 type BarProps = {
     value: number,
+    color: string,
+    width: number,
 };
 
-const Bar = ({value}: BarProps) => {
+const Bar = ({value, color, width}: BarProps) => {
 
     const BarStyle = {
         height: value + "px",
+        width: width + "px",
+        backgroundColor: color
     }
 
     return (

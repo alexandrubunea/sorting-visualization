@@ -2,10 +2,11 @@
 import { useState, useEffect, useRef } from 'react';
 
 // Components
-import Container from "./components/Container";
+import Container, {NumberTextPair} from "./components/Container";
 
 // Style
 import './App.css';
+
 
 /*
 	Explanation:
@@ -28,31 +29,10 @@ const gap_between_bars = 2;
 const number_of_bars = Math.floor((window.innerWidth - Math.floor((window.innerWidth / 10)) - 25) / (gap_between_bars + bar_width));
 const top_gap = window.innerHeight - bar_max_value - tool_bar_height;
 
-const start_sort = (arr: number[], sort_type: number) => {
-	let sorted_arr: number[] = [];
-	sorted_arr = [...arr];
+const default_bar_color = "#1ABCDD";
+const swap_bar_color = "#FB5E5E";
 
-	switch(sort_type) {
-		case 1: {
-			
-			break;
-		}
-		case 2: {
-
-			break;
-		}
-		case 3: {
-
-			break;
-		}
-		case 4: {
-
-			break;
-		}
-	}
-
-	return sorted_arr;
-}
+const default_speed = 50;
 
 const fill_random_values = () => {
 	let arr:number[] = [];
@@ -67,8 +47,17 @@ const fill_random_values = () => {
 	return arr;
 }
 
+let wait = async (ms: number) => {
+	return new Promise<void>((resolve) => {
+		const waiter = setTimeout(() => {
+			clearTimeout(waiter);
+			resolve();
+		}, ms);
+	})
+}
+
 const App = () => {
-	const [random_values, set_random_values] = useState<number[]>([]);
+	const [random_values, set_random_values] = useState<NumberTextPair[]>([]);
 	const algorithm_selected = useRef(document.createElement("select"))
 
 	const ToolbarStyle = {
@@ -76,15 +65,19 @@ const App = () => {
 	};
 
 	useEffect(() => {
-		set_random_values(fill_random_values());
+		let arr_random = fill_random_values();
+		let arr:NumberTextPair[] = [];
+
+		for(let i = 0; i < arr_random.length; ++i) {
+			arr.push({number: arr_random[i], text: default_bar_color});
+		}
+
+		set_random_values(arr);
 	}, [set_random_values]);
-
-	
-
 	
 	return (
 		<div className='App'>
-			<Container array={random_values} top_margin={top_gap} container_height={bar_max_value} />
+			<Container array={random_values} top_margin={top_gap} container_height={bar_max_value} bar_width={bar_width} />
 			<div className="toolbar" style={ToolbarStyle}>
 				<div className="content">
 					<label htmlFor="algorithm">Sorting Algorithm:</label>
@@ -94,10 +87,57 @@ const App = () => {
 						<option value="3">Merge Sort</option>
 						<option value="4">Quick Sort</option>
 					</select>
+					<button onClick={
+						async () => {
+							let bubblesort = async() => {
+								let array: NumberTextPair[] = random_values;
+								let is_sorted: boolean = false;
+								let limit: number = -1;
+								let new_limit: number = array.length;
+
+								while(!is_sorted) {
+									is_sorted = true;
+									limit = new_limit;
+
+									for(let i = 0; i < limit - 1; ++i) {
+										if(array[i].number > array[i + 1].number) {
+											is_sorted = false;
+											new_limit = i + 1;
+
+											array[i].text = array[i + 1].text = swap_bar_color;
+											set_random_values([...array]);
+											
+											await wait(default_speed);
+
+											let aux = array[i];
+											array[i] = array[i + 1];
+											array[i + 1] = aux;
+
+											set_random_values([...array]);
+
+											await wait(default_speed);
+
+											array[i].text = array[i + 1].text = default_bar_color;
+											set_random_values([...array]);
+											
+											await wait(default_speed);
+										}
+									}
+								}
+							}
+							await bubblesort();
+						}
+					}>Sort</button>
 					<button onClick={() => {
-						set_random_values(start_sort(random_values, Number(algorithm_selected.current.value)));
-					}}>Sort</button>
-					<button onClick={() => {set_random_values(fill_random_values())}}>Reset</button>
+						let arr_random = fill_random_values();
+						let arr:NumberTextPair[] = [];
+				
+						for(let i = 0; i < arr_random.length; ++i) {
+							arr.push({number: arr_random[i], text: "#1ABCDD"});
+						}
+				
+						set_random_values(arr);
+					}}>Reset</button>
 				</div>
 			</div>
 		</div>
