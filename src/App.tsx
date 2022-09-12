@@ -24,7 +24,7 @@ import './App.css';
 // Const Values
 const tool_bar_height = Math.floor(window.innerHeight * 5/100) + 30;
 const bar_max_value = window.innerHeight - tool_bar_height - 100;
-const bar_width = 5;
+const bar_width = 30;
 const gap_between_bars = 2;
 const number_of_bars = Math.floor((window.innerWidth - Math.floor((window.innerWidth / 10)) - 25) / (gap_between_bars + bar_width));
 const top_gap = window.innerHeight - bar_max_value - tool_bar_height;
@@ -32,7 +32,7 @@ const top_gap = window.innerHeight - bar_max_value - tool_bar_height;
 const default_bar_color = "#1ABCDD";
 const swap_bar_color = "#FB5E5E";
 
-const default_speed = 50;
+const default_speed = 25;
 
 const fill_random_values = () => {
 	let arr:number[] = [];
@@ -74,6 +74,53 @@ const App = () => {
 
 		set_random_values(arr);
 	}, [set_random_values]);
+
+	const swap = async(arr: NumberTextPair[], i: number, j: number) => {
+		arr[i].text = arr[j].text = swap_bar_color;
+		set_random_values([...arr]);
+		
+		await wait(default_speed);
+
+		let aux = arr[i];
+		arr[i] = arr[j];
+		arr[j] = aux;
+
+		set_random_values([...arr]);
+		
+		await wait(default_speed);
+	}
+
+	const bubblesort = async() => {
+		let array: NumberTextPair[] = random_values;
+		let is_sorted: boolean = false;
+		let limit: number = -1;
+		let new_limit: number = array.length;
+
+		while(!is_sorted) {
+			is_sorted = true;
+			limit = new_limit;
+
+			for(let i = 0; i < limit - 1; ++i) {
+				if(array[i].number > array[i + 1].number) {
+					is_sorted = false;
+					new_limit = i + 1;
+
+					await swap(array, i, i + 1);
+				} else {
+					for(let j = 0; j <= i; ++j) {
+						array[j].text = default_bar_color;
+					}
+					set_random_values([...array]);
+					await wait(default_speed);
+				}
+			}
+			for(let i = 0; i < limit; ++i) {
+				array[i].text = default_bar_color;
+			}
+			set_random_values([...array]);
+			await wait(default_speed);
+		}
+	}
 	
 	return (
 		<div className='App'>
@@ -87,46 +134,25 @@ const App = () => {
 						<option value="3">Merge Sort</option>
 						<option value="4">Quick Sort</option>
 					</select>
-					<button onClick={
-						async () => {
-							let bubblesort = async() => {
-								let array: NumberTextPair[] = random_values;
-								let is_sorted: boolean = false;
-								let limit: number = -1;
-								let new_limit: number = array.length;
+					<button onClick={async () => {
+						switch(Number(algorithm_selected.current.value)) {
+							case 1: {
 
-								while(!is_sorted) {
-									is_sorted = true;
-									limit = new_limit;
-
-									for(let i = 0; i < limit - 1; ++i) {
-										if(array[i].number > array[i + 1].number) {
-											is_sorted = false;
-											new_limit = i + 1;
-
-											array[i].text = array[i + 1].text = swap_bar_color;
-											set_random_values([...array]);
-											
-											await wait(default_speed);
-
-											let aux = array[i];
-											array[i] = array[i + 1];
-											array[i + 1] = aux;
-
-											set_random_values([...array]);
-
-											await wait(default_speed);
-
-											array[i].text = array[i + 1].text = default_bar_color;
-											set_random_values([...array]);
-											
-											await wait(default_speed);
-										}
-									}
-								}
+								break;
 							}
-							await bubblesort();
+							case 2: {
+								await bubblesort();
+								break;
+							}
+							case 3: {
+
+								break;
+							}
+							case 4: {
+
+							}
 						}
+					}
 					}>Sort</button>
 					<button onClick={() => {
 						let arr_random = fill_random_values();
