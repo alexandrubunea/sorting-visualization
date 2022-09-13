@@ -21,18 +21,20 @@ import './App.css';
 	between two bars.
 		top_gap = the size of the top margin
 */
+// Config
+let bar_width = 5;
+let animation_speed = 50;
+let number_of_bars = Math.floor((window.innerWidth - Math.floor((window.innerWidth / 10)) - 25) / bar_width);
+
 // Const Values
 const tool_bar_height = Math.floor(window.innerHeight * 5/100) + 30;
 const bar_max_value = window.innerHeight - tool_bar_height - 100;
-const bar_width = 3;
-const number_of_bars = Math.floor((window.innerWidth - Math.floor((window.innerWidth / 10)) - 25) / bar_width);
 const top_gap = window.innerHeight - bar_max_value - tool_bar_height;
 
 const default_bar_color = "#EDEDFC";
 const swap_bar_color = "#FB5E5E";
 const range_bar_color = "#1ABCDD";
 
-const default_speed = 10;
 
 const fill_random_values = () => {
 	let arr:number[] = [];
@@ -42,7 +44,12 @@ const fill_random_values = () => {
 		arr.push(random_value);
 	}
 
-	arr[Math.floor((Math.random() * (arr.length - 1)) + 1)] = bar_max_value;
+	/*
+	There is a bug (CSS probably), where if you don't have at least one bar with the max value in your array a small gap between
+		the toolbar and container will appear. It should be the last element because in merge sort (when the max bar disappears for 
+		a short time) will cause a small flicker between the container and the toolbar.
+	*/
+	arr[arr.length - 1] = bar_max_value;
 
 	return arr;
 }
@@ -58,7 +65,10 @@ let wait = async (ms: number) => {
 
 const App = () => {
 	const [random_values, set_random_values] = useState<NumberTextPair[]>([]);
-	const algorithm_selected = useRef(document.createElement("select"))
+	const algorithm_selected = useRef(document.createElement("select"));
+	const [algorithm_running, set_algorithm_running] = useState<boolean>(false);
+	const algorithm_speed = useRef(document.createElement("input"));
+	const bar_width_px = useRef(document.createElement("input"));
 
 	const ToolbarStyle = {
 		height: tool_bar_height + "px",
@@ -79,7 +89,7 @@ const App = () => {
 		arr[i].text = arr[j].text = swap_bar_color;
 		set_random_values([...arr]);
 		
-		await wait(default_speed);
+		await wait(animation_speed);
 
 		let aux = arr[i];
 		arr[i] = arr[j];
@@ -87,7 +97,7 @@ const App = () => {
 
 		set_random_values([...arr]);
 		
-		await wait(default_speed);
+		await wait(animation_speed);
 	}
 
 	const bubblesort = async() => {
@@ -236,6 +246,65 @@ const App = () => {
 			quicksort(array, pivotIndex + 1, right, partition_type)
 		]);
 	}
+
+	const merge = async(array: NumberTextPair[], left: number, middle: number, right: number) => {
+		let left_array: NumberTextPair[] = [];
+		let right_array: NumberTextPair[] = [];
+		let k = left, i = 0, j = 0;
+
+		// Copy elements
+		for(let it = left; it <= middle; ++it)
+			left_array.push(array[it]);
+		for(let it = middle + 1; it <= right; ++it)
+			right_array.push(array[it]);
+		
+		let mem: number[] = [];
+
+		while(i < left_array.length && j < right_array.length) {
+			// Animations
+			mem = [left + i, middle + 1 + j];
+			array[mem[0]].text = array[mem[1]].text = swap_bar_color;
+			set_random_values([...array]);
+			await wait(animation_speed); 
+			
+			if(left_array[i].number < right_array[j].number) {
+				array[k++] = left_array[i++];
+			} else if(left_array[i].number > right_array[j].number) {
+				array[k++] = right_array[j++];
+			} else {
+				array[k++] = left_array[i++];
+				array[k++] = right_array[j++];
+			}
+
+			set_random_values([...array]);
+			await wait(animation_speed); 
+			
+			array[mem[0]].text = array[mem[1]].text = default_bar_color;
+			set_random_values([...array]);
+		}
+		
+		array[mem[0]].text = array[mem[1]].text = default_bar_color;
+		set_random_values([...array]);
+
+		for(let it = i; it < left_array.length; ++it)
+			array[k++] = left_array[it];
+		
+		for(let it = j; it < right_array.length; ++it)
+			array[k++] = right_array[it];
+	}
+
+	const merge_sort = async(array: NumberTextPair[], left: number, right: number) => {
+		if(left >= right) return;
+
+		let middle = (left + right) >> 1;
+
+		await Promise.all([
+			merge_sort(array, left, middle),
+			merge_sort(array, middle + 1, right)
+		]);
+
+		await merge(array, left, middle, right);
+	}
 	
 	return (
 		<div className='App'>
@@ -243,14 +312,47 @@ const App = () => {
 			<div className="toolbar" style={ToolbarStyle}>
 				<div className="content">
 					<label htmlFor="algorithm">Sorting Algorithm:</label>
-					<select id="algorithm" ref={algorithm_selected!}>
+					<select id="algorithm" ref={algorithm_selected} style={{marginRight: "3rem"}}>
 						<option value="1">Selection Sort</option>
 						<option value="2">Bubble Sort</option>
 						<option value="3">Merge Sort</option>
 						<option value="4">Quick Sort (Hoare Partition)</option>
 						<option value="5">Quick Sort (Lomuto Partition)</option>
 					</select>
+					<input type="text" placeholder='Speed(ms)' ref={algorithm_speed}></input>
+					<input type="text" placeholder='Bar size(px)' id='barwidth' ref={bar_width_px}></input>
+					<button style={{marginRight: "3rem"}} onClick={
+						() => {
+							if(algorithm_running) return;
+
+							let algo_speed = Number(algorithm_speed.current.value);
+							let b_width = Number(bar_width_px.current.value);
+
+							if(algo_speed <= 0 || b_width <= 0) return alert("Speed/Bar Width must be greater than zero!");
+
+							animation_speed = algo_speed;
+							
+							
+							if(bar_width !== b_width) {
+								bar_width = b_width;
+								number_of_bars = Math.floor((window.innerWidth - Math.floor((window.innerWidth / 10)) - 25) / bar_width);
+								
+								let arr_random = fill_random_values();
+								let arr:NumberTextPair[] = [];
+
+								for(let i = 0; i < arr_random.length; ++i) {
+									arr.push({number: arr_random[i], text: default_bar_color});
+								}
+
+								set_random_values(arr);
+							}
+						}
+					}>Apply</button>
 					<button onClick={async () => {
+						if(algorithm_running) return;
+						
+						set_algorithm_running(true);
+
 						switch(Number(algorithm_selected.current.value)) {
 							case 1: {
 
@@ -262,6 +364,12 @@ const App = () => {
 								break;
 							}
 							case 3: {
+								let array: NumberTextPair[] = random_values;
+								await merge_sort(array, 0, array.length - 1);
+
+								for(let i = 0; i < array.length; ++i)
+									array[i].text = default_bar_color;
+								set_random_values([...array]);
 
 								break;
 							}
@@ -278,9 +386,12 @@ const App = () => {
 								break;
 							}
 						}
+
+						set_algorithm_running(false);
 					}
 					}>Sort</button>
 					<button onClick={() => {
+						if(algorithm_running) return;
 						let arr_random = fill_random_values();
 						let arr:NumberTextPair[] = [];
 				
