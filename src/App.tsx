@@ -24,15 +24,15 @@ import './App.css';
 // Const Values
 const tool_bar_height = Math.floor(window.innerHeight * 5/100) + 30;
 const bar_max_value = window.innerHeight - tool_bar_height - 100;
-const bar_width = 30;
-const gap_between_bars = 2;
-const number_of_bars = Math.floor((window.innerWidth - Math.floor((window.innerWidth / 10)) - 25) / (gap_between_bars + bar_width));
+const bar_width = 3;
+const number_of_bars = Math.floor((window.innerWidth - Math.floor((window.innerWidth / 10)) - 25) / bar_width);
 const top_gap = window.innerHeight - bar_max_value - tool_bar_height;
 
-const default_bar_color = "#1ABCDD";
+const default_bar_color = "#EDEDFC";
 const swap_bar_color = "#FB5E5E";
+const range_bar_color = "#1ABCDD";
 
-const default_speed = 25;
+const default_speed = 10;
 
 const fill_random_values = () => {
 	let arr:number[] = [];
@@ -111,15 +111,130 @@ const App = () => {
 						array[j].text = default_bar_color;
 					}
 					set_random_values([...array]);
-					await wait(default_speed);
 				}
 			}
 			for(let i = 0; i < limit; ++i) {
 				array[i].text = default_bar_color;
 			}
 			set_random_values([...array]);
-			await wait(default_speed);
 		}
+	}
+
+	const lomuto_partition = async(array: NumberTextPair[], left: number, right: number) => {
+		let pivot = array[right].number;
+		let i = left - 1;
+
+		for(let j = left; j < right; ++j) {
+			if(array[j].number <= pivot) {
+				++i;
+				await swap(array, i, j);
+
+				array[i].text = array[j].text = range_bar_color;
+				set_random_values([...array]);
+			}
+		}
+
+		++i;
+		await swap(array, i, right);
+
+		array[i].text = array[right].text = range_bar_color;
+		set_random_values([...array]);
+
+		return i;
+	}
+
+	const hoare_partition = async(array: NumberTextPair[], left: number, right: number) => {
+		let middle = (left + right) >> 1;
+		
+		// Median of three
+		if(array[middle].number < array[left].number) {
+			await swap(array, middle, left);
+
+			array[left].text = array[middle].text = range_bar_color;
+			set_random_values([...array]);
+		}
+		if(array[right].number < array[left].number) {
+			await swap(array, right, left);
+
+			array[left].text = array[right].text = range_bar_color;
+			set_random_values([...array]);
+		}
+		if(array[middle].number < array[right].number) {
+			await swap(array, middle, right);
+
+			array[middle].text = array[right].text = range_bar_color;
+			set_random_values([...array]);
+		}
+		
+		let pivot = array[middle].number;
+		let i = left - 1;
+		let j = right + 1;
+
+		while(true) {
+
+			/*
+			Useful Explanation:
+			"Hoare Partition"
+				Why we increment "i" and decrement "j" before the comparasion?
+				To simplfy the things, let's transform the two while below in two do while:
+					do i++; while(array[i] < pivot);
+					do j--; while(array[j] < pivot);
+				So why we do this and just don't use a normal while where i = left and j = right in the first place?
+				Something like this:
+					i = left;
+					j = right;
+					while(true)
+						while(array[i] < pivot) i++;
+						while(array[j] > pivot) j--;
+						...
+				Because we will meet duplicate values and if array[i] and array[j] have the same value we will get stuck.
+				When we increment/decrement the value before comparing with the pivot we will get unstuck in the next interation
+				of the main while loop if the values are the same, because i will increment one position and j will decrement one
+				position, regardless of the comparasion, so if it's stuck it will unstuck.
+
+				If You still don't understand read this wiki page:
+				https://en.wikipedia.org/wiki/Quicksort#Hoare_partition_scheme
+
+				Then take a paper and a pen and try to figure out what will happen in the loop if array[i] it's equal with array[j],
+				try too see what will happen in the next iteration.
+			*/
+
+			while(array[++i].number < pivot);
+			while(array[--j].number > pivot);
+
+			if(i >= j) return j;
+
+			await swap(array, i, j);
+
+			// remove swap colors
+			array[i].text = array[j].text = range_bar_color;
+			set_random_values([...array]);
+		}
+	}
+
+	const quicksort = async(array: NumberTextPair[], left: number, right: number, partition_type: boolean) => {
+		if(left >= right) return;
+		
+		// range color
+		for(let i = left; i <= right; ++i)
+			array[i].text = range_bar_color;
+		set_random_values([...array]);
+
+		let pivotIndex = 0;
+		if(partition_type)
+			pivotIndex = await hoare_partition(array, left, right);
+		else
+			pivotIndex = await lomuto_partition(array, left, right);
+
+		// reset color
+		for(let i = left; i <= right; ++i)
+			array[i].text = default_bar_color;
+		set_random_values([...array]);
+
+		await Promise.all([
+			quicksort(array, left, (partition_type) ? pivotIndex : pivotIndex - 1, partition_type),
+			quicksort(array, pivotIndex + 1, right, partition_type)
+		]);
 	}
 	
 	return (
@@ -132,7 +247,8 @@ const App = () => {
 						<option value="1">Selection Sort</option>
 						<option value="2">Bubble Sort</option>
 						<option value="3">Merge Sort</option>
-						<option value="4">Quick Sort</option>
+						<option value="4">Quick Sort (Hoare Partition)</option>
+						<option value="5">Quick Sort (Lomuto Partition)</option>
 					</select>
 					<button onClick={async () => {
 						switch(Number(algorithm_selected.current.value)) {
@@ -142,6 +258,7 @@ const App = () => {
 							}
 							case 2: {
 								await bubblesort();
+								
 								break;
 							}
 							case 3: {
@@ -149,7 +266,16 @@ const App = () => {
 								break;
 							}
 							case 4: {
+								let array: NumberTextPair[] = random_values;
+								await quicksort(array, 0, array.length - 1, true);
 
+								break;
+							}
+							case 5: {
+								let array: NumberTextPair[] = random_values;
+								await quicksort(array, 0, array.length - 1, false);
+
+								break;
 							}
 						}
 					}
@@ -159,7 +285,7 @@ const App = () => {
 						let arr:NumberTextPair[] = [];
 				
 						for(let i = 0; i < arr_random.length; ++i) {
-							arr.push({number: arr_random[i], text: "#1ABCDD"});
+							arr.push({number: arr_random[i], text: default_bar_color});
 						}
 				
 						set_random_values(arr);
