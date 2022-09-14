@@ -23,7 +23,7 @@ import './App.css';
 */
 // Config
 let bar_width = 5;
-let animation_speed = 50;
+let animation_speed = 10;
 let number_of_bars = Math.floor((window.innerWidth - Math.floor((window.innerWidth / 10)) - 25) / bar_width);
 
 // Const Values
@@ -250,47 +250,74 @@ const App = () => {
 	const merge = async(array: NumberTextPair[], left: number, middle: number, right: number) => {
 		let left_array: NumberTextPair[] = [];
 		let right_array: NumberTextPair[] = [];
-		let k = left, i = 0, j = 0;
+		let sorted_array: NumberTextPair[] = [];
+		let i = 0, j = 0;
+		let memo: number[] = [];
 
 		// Copy elements
 		for(let it = left; it <= middle; ++it)
 			left_array.push(array[it]);
 		for(let it = middle + 1; it <= right; ++it)
 			right_array.push(array[it]);
-		
-		let mem: number[] = [];
 
 		while(i < left_array.length && j < right_array.length) {
-			// Animations
-			mem = [left + i, middle + 1 + j];
-			array[mem[0]].text = array[mem[1]].text = swap_bar_color;
+			memo = [left + i, middle + 1 + j];
+
+			array[memo[0]].text = array[memo[1]].text = swap_bar_color;
 			set_random_values([...array]);
 			await wait(animation_speed); 
 			
-			if(left_array[i].number < right_array[j].number) {
-				array[k++] = left_array[i++];
-			} else if(left_array[i].number > right_array[j].number) {
-				array[k++] = right_array[j++];
-			} else {
-				array[k++] = left_array[i++];
-				array[k++] = right_array[j++];
+			if(left_array[i].number < right_array[j].number)
+				sorted_array.push(left_array[i++]);
+			else if(left_array[i].number > right_array[j].number)
+				sorted_array.push(right_array[j++]);
+			else {
+				sorted_array.push(left_array[i++]);
+				sorted_array.push(right_array[j++]);
 			}
 
+			array[memo[0]].text = array[memo[1]].text = default_bar_color;
 			set_random_values([...array]);
-			await wait(animation_speed); 
-			
-			array[mem[0]].text = array[mem[1]].text = default_bar_color;
-			set_random_values([...array]);
+
+			await wait(animation_speed);
 		}
 		
-		array[mem[0]].text = array[mem[1]].text = default_bar_color;
-		set_random_values([...array]);
 
-		for(let it = i; it < left_array.length; ++it)
-			array[k++] = left_array[it];
+		for(let it = i; it < left_array.length; ++it) {
+			array[left + it].text = swap_bar_color;
+			set_random_values([...array]);
+			await wait(animation_speed); 
+
+			sorted_array.push(left_array[it]);
+
+			array[left + it].text = default_bar_color;
+			set_random_values([...array]);
+			await wait(animation_speed); 
+		}
 		
-		for(let it = j; it < right_array.length; ++it)
-			array[k++] = right_array[it];
+		for(let it = j; it < right_array.length; ++it) {
+			array[middle + 1 + it].text = swap_bar_color;
+			set_random_values([...array]);
+			await wait(animation_speed); 
+
+			sorted_array.push(right_array[it]);
+
+			array[middle + 1 + it].text = default_bar_color;
+			set_random_values([...array]);
+			await wait(animation_speed);
+		}
+
+		for(let it = 0; it < sorted_array.length; ++it) {
+			array[left + it] = sorted_array[it];
+
+			array[left + it].text = swap_bar_color;
+			set_random_values([...array]);
+			await wait(animation_speed);
+
+			array[left + it].text = range_bar_color;
+			set_random_values([...array]);
+			await wait(animation_speed); 
+		}
 	}
 
 	const merge_sort = async(array: NumberTextPair[], left: number, right: number) => {
@@ -304,6 +331,12 @@ const App = () => {
 		]);
 
 		await merge(array, left, middle, right);
+
+		for(let i = left; i <= right; ++i) {
+			array[i].text = default_bar_color;
+			set_random_values([...array]);
+			await wait(animation_speed); 
+		}
 	}
 	
 	return (
@@ -314,6 +347,7 @@ const App = () => {
 					<label htmlFor="algorithm">Sorting Algorithm:</label>
 					<select id="algorithm" ref={algorithm_selected} style={{marginRight: "3rem"}}>
 						<option value="1">Selection Sort</option>
+						<option value="6">Insertion Sort</option>
 						<option value="2">Bubble Sort</option>
 						<option value="3">Merge Sort</option>
 						<option value="4">Quick Sort (Hoare Partition)</option>
@@ -366,10 +400,6 @@ const App = () => {
 							case 3: {
 								let array: NumberTextPair[] = random_values;
 								await merge_sort(array, 0, array.length - 1);
-
-								for(let i = 0; i < array.length; ++i)
-									array[i].text = default_bar_color;
-								set_random_values([...array]);
 
 								break;
 							}

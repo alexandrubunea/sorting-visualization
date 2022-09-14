@@ -1,5 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat&display=swap');
-
+/*
+    incearca cu border pe container ca sa
+    vezi ce se petrece
+*/
 body {
     background-color: #242426;
     color: #EDEDFC;
