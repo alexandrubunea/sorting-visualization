@@ -1,5 +1,6 @@
 // Libraries
 import { useState, useEffect, useRef } from 'react';
+import { Heap } from './data structures/Heap';
 
 // Components
 import Container, {NumberTextPair} from "./components/Container";
@@ -362,17 +363,60 @@ const App = () => {
 		let array: NumberTextPair[] = random_values;
 
 		for(let i = 0; i < array.length; ++i) {
-			let j = i;
+			let key = array[i];
+			let j = i - 1;
 
-			while(j > 0 && array[j].number < array[j - 1].number) {
-				await swap(array, j - 1, j);
-			
-				array[j].text = array[j - 1].text = default_bar_color;
+			array[i].text = swap_bar_color;
+			set_random_values([...array]);
+			await wait(animation_speed);
+
+			while(j >= 0 && array[j].number > key.number) {
+				array[j].text = swap_bar_color;
+				set_random_values([...array]);
+				await wait(animation_speed);
+
+				array[j + 1] = array[j];
+
+				array[j].text = default_bar_color;
 				set_random_values([...array]);
 
 				--j;
 			}
+			array[j + 1] = key;
+
+			array[i].text = array[j + 1].text = default_bar_color;
+			set_random_values([...array]);
 		}
+	}
+
+	const heap_sort = async() => {
+		let array: NumberTextPair[] = random_values;
+		let min_heap: Heap = new Heap((a: NumberTextPair, b: NumberTextPair) => {
+			return a.number < b.number;
+		});
+
+		// Create the heap
+		for(let i = 0; i < array.length; ++i) {
+			min_heap.insert(array[i]);
+			array[i].text = range_bar_color;
+			set_random_values([...array]);
+			await wait(animation_speed);
+		}
+
+		// Replace with sorted heap
+		for(let i = 0; i < array.length; ++i) {
+			array[i] = min_heap.peek();
+			min_heap.pop();
+			set_random_values([...array]);
+			await wait(animation_speed);
+		}
+
+		// Reset color
+		for(let i = 0; i < array.length; ++i)
+			array[i].text = default_bar_color;
+		
+		set_random_values([...array]);
+
 	}
 	
 	return (
@@ -459,6 +503,7 @@ const App = () => {
 								break;
 							}
 							case 7: {
+								await heap_sort();
 
 								break;
 							}
