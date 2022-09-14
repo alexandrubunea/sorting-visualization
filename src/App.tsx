@@ -334,8 +334,44 @@ const App = () => {
 
 		for(let i = left; i <= right; ++i) {
 			array[i].text = default_bar_color;
-			set_random_values([...array]);
-			await wait(animation_speed); 
+		}
+		set_random_values([...array]);
+		await wait(animation_speed); 
+	}
+
+	const selection_sort = async() => {
+		let array: NumberTextPair[] = random_values;
+
+		for(let i = 0; i < array.length; ++i) {
+			let min_id = i;
+
+			for(let j = i + 1; j < array.length; ++j)
+				if(array[j].number < array[min_id].number)
+					min_id = j;
+
+			if(min_id !== i) {
+				await swap(array, i, min_id);
+	
+				array[i].text = array[min_id].text = default_bar_color;
+				set_random_values([...array]);
+			}
+		}
+	}
+
+	const insertion_sort = async() => {
+		let array: NumberTextPair[] = random_values;
+
+		for(let i = 0; i < array.length; ++i) {
+			let j = i;
+
+			while(j > 0 && array[j].number < array[j - 1].number) {
+				await swap(array, j - 1, j);
+			
+				array[j].text = array[j - 1].text = default_bar_color;
+				set_random_values([...array]);
+
+				--j;
+			}
 		}
 	}
 	
@@ -347,11 +383,12 @@ const App = () => {
 					<label htmlFor="algorithm">Sorting Algorithm:</label>
 					<select id="algorithm" ref={algorithm_selected} style={{marginRight: "3rem"}}>
 						<option value="1">Selection Sort</option>
-						<option value="6">Insertion Sort</option>
-						<option value="2">Bubble Sort</option>
-						<option value="3">Merge Sort</option>
-						<option value="4">Quick Sort (Hoare Partition)</option>
-						<option value="5">Quick Sort (Lomuto Partition)</option>
+						<option value="2">Insertion Sort</option>
+						<option value="3">Bubble Sort</option>
+						<option value="4">Merge Sort</option>
+						<option value="5">Quick Sort (Hoare Partition)</option>
+						<option value="6">Quick Sort (Lomuto Partition)</option>
+						<option value="7">Heap Sort</option>
 					</select>
 					<input type="text" placeholder='Speed(ms)' ref={algorithm_speed}></input>
 					<input type="text" placeholder='Bar size(px)' id='barwidth' ref={bar_width_px}></input>
@@ -389,29 +426,39 @@ const App = () => {
 
 						switch(Number(algorithm_selected.current.value)) {
 							case 1: {
+								await selection_sort();
 
 								break;
 							}
 							case 2: {
-								await bubblesort();
-								
+								await insertion_sort();
+
 								break;
 							}
 							case 3: {
-								let array: NumberTextPair[] = random_values;
-								await merge_sort(array, 0, array.length - 1);
+								await bubblesort();
 
 								break;
 							}
 							case 4: {
 								let array: NumberTextPair[] = random_values;
-								await quicksort(array, 0, array.length - 1, true);
+								await merge_sort(array, 0, array.length - 1);
 
 								break;
 							}
 							case 5: {
 								let array: NumberTextPair[] = random_values;
+								await quicksort(array, 0, array.length - 1, true);
+
+								break;
+							}
+							case 6: {
+								let array: NumberTextPair[] = random_values;
 								await quicksort(array, 0, array.length - 1, false);
+
+								break;
+							}
+							case 7: {
 
 								break;
 							}
